@@ -4,9 +4,9 @@ import android.content.Context
 import android.util.Log
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.viewModelScope
-import com.boilerplate.base.BaseViewModel
 import com.example.mytestproject.model.DayTimings
 import com.example.mytestproject.repository.RemoteRepository
+import com.sit.common.base.BaseViewModel
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.Dispatchers.IO
@@ -17,7 +17,8 @@ import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 @HiltViewModel
-class MainViewModel @Inject constructor(val remoteRepository: RemoteRepository, @ApplicationContext val context : Context
+class MainViewModel @Inject constructor(
+    private val remoteRepository: RemoteRepository, @ApplicationContext val context : Context
 )  : BaseViewModel(){
 
     val timingsList = MutableLiveData<ArrayList<DayTimings>>()

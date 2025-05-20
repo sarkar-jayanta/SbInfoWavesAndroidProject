@@ -1,8 +1,9 @@
 package com.example.mytestproject.di
 
-import com.android_boilerplate.BuildConfig
 import com.example.mytestproject.ApiInterface
 import com.example.mytestproject.AppConstants
+import com.sit.common.BuildConfig
+
 
 import dagger.Module
 import dagger.Provides

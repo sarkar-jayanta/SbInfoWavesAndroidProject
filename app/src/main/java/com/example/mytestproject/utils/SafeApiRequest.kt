@@ -1,54 +1,59 @@
-package com.shaligram.tripuratourism.utils
+package com.example.mytestproject.utils
 
 import android.content.Context
-import com.example.mytestproject.model.DayTimings
-import com.shaligram.tripuratourism.TripuraTourismApp
+import android.util.Log
+import com.example.mytestproject.MyTestApplication
 import com.sit.common.utils.NoInternetException
-import org.json.JSONException
 import org.json.JSONObject
+import retrofit2.Response
+import java.io.IOException
 
 class SafeApiRequest(private val context: Context) {
-    suspend fun <T : Any> apiRequest(call: () -> ArrayList<DayTimings>): T {
+
+    suspend fun <T : Any> apiRequest(call: suspend () -> Response<T>): T {
         try {
             val response = call.invoke()
-            val message = StringBuilder()
 
             if (response.isSuccessful) {
-                return response.body()!!
+                return response.body() ?: throw ApiException("Response body is null")
             } else {
-                if (response.code() == 401 || response.code() == 403) {
-                    if (context is TripuraTourismApp) {
-                        context.showSessionExpireDialog()
-                        throw AuthException("Session Expired")
-                    } else {
-                        throw ApiException("Something went wrong please try again!")
-                    }
-                } else {
+                val errorMessage = parseErrorMessage(response)
 
-                    val error = response.errorBody()?.string()
-                    error?.let {
-                        try {
-                            val jonObj = JSONObject(it)
-                            if (jonObj.has("message")) {
-                                message.append(jonObj.getString("message"))
-                            } else if (jonObj.has("Message")) {
-                                message.append(jonObj.getString("Message"))
-                            } else {
-                                message.append("Something went wrong please try again!")
-                            }
-                        } catch (e: JSONException) {
-                            message.append("\n")
+                when (response.code()) {
+                    401, 403 -> {
+                        Log.d("Exception", "Unauthorized or session expired")
+                        if (context is MyTestApplication) {
+
                         }
+                        throw AuthException("Session expired or unauthorized")
                     }
-                    throw ApiException(message.toString())
 
+                    else -> {
+                        Log.d("Exception", errorMessage)
+                        throw ApiException(errorMessage)
+                    }
                 }
             }
-        } catch (ex: Exception) {
-            if (ex is NoInternetException) {
 
-            }
-            throw ex
+        } catch (ex: NoInternetException) {
+            Log.e("SafeApiRequest", "No internet connection", ex)
+            throw ApiException("No internet connection")
+        } catch (ex: IOException) {
+            Log.e("SafeApiRequest", "Network error", ex)
+            throw ApiException("Network error: ${ex.localizedMessage}")
+        } catch (ex: Exception) {
+            Log.e("SafeApiRequest", "Unexpected error", ex)
+            throw ApiException("Unexpected error: ${ex.localizedMessage}")
+        }
+    }
+
+    private fun parseErrorMessage(response: Response<*>): String {
+        return try {
+            val error = response.errorBody()?.string()
+            val json = JSONObject(error ?: "")
+            json.optString("message", json.optString("Message", "Something went wrong. Please try again!"))
+        } catch (e: Exception) {
+            "Something went wrong. Please try again!"
         }
     }
 }
